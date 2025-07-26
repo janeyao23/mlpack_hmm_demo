@@ -1,0 +1,9 @@
+{
+  "name": "hmm-demo",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "armadillo",
+    "boost-program-options",
+    "boost-serialization"
+  ]
+}
