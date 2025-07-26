@@ -1,0 +1,63 @@
+name: Build HMM Demo (Windows)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  # Specify the mlpack version tag to check out.  This matches the
+  # release used in the README.
+  MLPACK_VERSION: 4.6.2
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: false
+
+      # Set up msbuild for 32‑bit Visual Studio builds
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      # Install dependencies via vcpkg.  This step uses a minimal
+      # vcpkg.json located at the repository root to install Armadillo
+      # and Boost libraries for x86 Windows.  Additional packages can
+      # be added to vcpkg.json as necessary.
+      - name: Install dependencies with vcpkg
+        uses: lukka/run-vcpkg@v10
+        with:
+          # Ensure we use 32‑bit triplet
+          triplet: x86-windows
+          vcpkgJsonUrl: ''
+          # vcpkg will discover and install dependencies listed in
+          # vcpkg.json automatically.  No additional arguments needed.
+
+      # Clone the mlpack source at the specified tag.  A shallow clone
+      # reduces checkout time.
+      - name: Clone mlpack source
+        run: |
+          git clone --depth 1 --branch ${MLPACK_VERSION} https://github.com/mlpack/mlpack.git mlpack
+
+      # Configure the CMake project.  We pass the vcpkg toolchain file so
+      # that CMake locates the dependencies installed above.  The
+      # -A Win32 argument selects a 32‑bit build on Windows.
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build -A Win32 \
+            -DMLPACK_SRC_DIR="${{ github.workspace }}/mlpack" \
+            -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" \
+            -DMLPACK_BUILD_TESTS=OFF -DMLPACK_BUILD_BENCHMARKS=OFF
+
+      # Build the demo in Release mode.  The --parallel flag speeds up
+      # compilation by using all available cores.
+      - name: Build
+        run: cmake --build build --config Release --parallel
