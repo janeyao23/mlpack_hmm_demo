@@ -24,34 +24,25 @@ jobs:
         with:
           submodules: false
 
-      # Set up msbuild for 32-bit Visual Studio builds
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      # Setup vcpkg and install dependencies
       - name: Setup vcpkg and install dependencies
         run: |
           git clone --depth 1 https://github.com/microsoft/vcpkg.git
           ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
-          ./vcpkg/vcpkg install armadillo:x86-windows boost-program-options:x86-windows boost-serialization:x86-windows
+          ./vcpkg/vcpkg install --triplet x86-windows
 
-      # Clone the mlpack source at the specified tag.  A shallow clone
-      # reduces checkout time.
       - name: Clone mlpack source
         run: |
           git clone --depth 1 --branch ${MLPACK_VERSION} https://github.com/mlpack/mlpack.git mlpack
 
-      # Configure the CMake project.  We pass the vcpkg toolchain file so
-      # that CMake locates the dependencies installed above.  The
-      # -A Win32 argument selects a 32-bit build on Windows.
       - name: Configure CMake
         run: |
           cmake -S . -B build -A Win32 \
-            -DMLPACK_SRC_DIR=\"$GITHUB_WORKSPACE/mlpack\" \
-            -DCMAKE_TOOLCHAIN_FILE=\"$GITHUB_WORKSPACE/vcpkg/scripts/buildsystems/vcpkg.cmake\" \
+            -DMLPACK_SRC_DIR="$GITHUB_WORKSPACE/mlpack" \
+            -DCMAKE_TOOLCHAIN_FILE="$GITHUB_WORKSPACE/vcpkg/scripts/buildsystems/vcpkg.cmake" \
             -DMLPACK_BUILD_TESTS=OFF -DMLPACK_BUILD_BENCHMARKS=OFF
 
-      # Build the demo in Release mode.  The --parallel flag speeds up
-      # compilation by using all available cores.
       - name: Build
         run: cmake --build build --config Release --parallel
