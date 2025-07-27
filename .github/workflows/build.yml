@@ -29,22 +29,39 @@ jobs:
 
       - name: Setup vcpkg and install dependencies
         run: |
+          # Clone vcpkg
           git clone --depth 1 https://github.com/microsoft/vcpkg.git
+          # Bootstrap vcpkg without collecting telemetry
           ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
+          # Install dependencies using the x86-windows triplet.  This reads the
+          # vcpkg.json file in the repository root to determine which packages
+          # to install and ensures that 32‑bit libraries are used.
           ./vcpkg/vcpkg install --triplet x86-windows
+          # Enable integration so that Visual Studio/MSBuild can find the
+          # installed packages automatically.
+          ./vcpkg/vcpkg integrate install
 
       - name: Clone mlpack source
         run: |
+          # Clone the mlpack source at the specified tag.  A shallow clone
+          # reduces checkout time.
           git clone --depth 1 --branch ${MLPACK_VERSION} https://github.com/mlpack/mlpack.git mlpack
-
 
       - name: Configure CMake
         run: |
+          # Configure the CMake project.  The -A Win32 argument selects a 32‑bit
+          # build on Windows.  The MLpack source directory and vcpkg toolchain
+          # file are provided so that CMake can locate the library source and
+          # installed dependencies.  The VCPKG_TARGET_TRIPLET is set to match
+          # the installed dependencies.
           cmake -S . -B build -A Win32 \
             -DMLPACK_SRC_DIR="$GITHUB_WORKSPACE/mlpack" \
             -DCMAKE_TOOLCHAIN_FILE="$GITHUB_WORKSPACE/vcpkg/scripts/buildsystems/vcpkg.cmake" \
-                -DVCPKG_TARGET_TRIPLET=x86-windows \
+            -DVCPKG_TARGET_TRIPLET=x86-windows \
             -DMLPACK_BUILD_TESTS=OFF -DMLPACK_BUILD_BENCHMARKS=OFF
 
       - name: Build
-        run: cmake --build build --config Release --parallel
+        run: |
+          # Build the demo in Release mode.  The --parallel flag speeds up
+          # compilation by using all available cores.
+          cmake --build build --config Release --parallel
