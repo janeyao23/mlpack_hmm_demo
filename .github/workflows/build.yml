@@ -37,11 +37,13 @@ jobs:
         run: |
           git clone --depth 1 --branch ${MLPACK_VERSION} https://github.com/mlpack/mlpack.git mlpack
 
+
       - name: Configure CMake
         run: |
           cmake -S . -B build -A Win32 \
             -DMLPACK_SRC_DIR="$GITHUB_WORKSPACE/mlpack" \
             -DCMAKE_TOOLCHAIN_FILE="$GITHUB_WORKSPACE/vcpkg/scripts/buildsystems/vcpkg.cmake" \
+                -DVCPKG_TARGET_TRIPLET=x86-windows \
             -DMLPACK_BUILD_TESTS=OFF -DMLPACK_BUILD_BENCHMARKS=OFF
 
       - name: Build
