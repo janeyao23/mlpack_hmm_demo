@@ -31,7 +31,7 @@ jobs:
           git checkout 2025.07.25
           cd ..
           ./vcpkg/bootstrap-vcpkg.sh
-          ./vcpkg/vcpkg install --triplet x86-windows
+          ./vcpkg/vcpkg install --triplet x64-windows
           ./vcpkg/vcpkg integrate install
 
       - name: Configure CMake
