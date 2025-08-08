@@ -9,5 +9,6 @@
       "name": "mlpack",
       "version>=": "4.6.2"
     }
-  ]
+  ],
+  "builtin-baseline": "8cce1e1118ea2569d5117f096035671a8490b8f4"
 }
