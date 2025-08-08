@@ -1,15 +1,12 @@
 name: Build HMM Demo (Windows)
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-env:
-  # Specify the mlpack version tag to check out.  This matches the
-  # release used in the README.
-  MLPACK_VERSION: 4.6.2
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'nouse'
+        required: false
+        default: 'nouse'
 
 jobs:
   build:
@@ -29,23 +26,13 @@ jobs:
 
       - name: Setup vcpkg and install dependencies
         run: |
-          # Clone vcpkg
-          git clone --depth 1 https://github.com/microsoft/vcpkg.git
-          # Bootstrap vcpkg without collecting telemetry
-          ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
-          # Install dependencies using the x86-windows triplet.  This reads the
-          # vcpkg.json file in the repository root to determine which packages
-          # to install and ensures that 32‑bit libraries are used.
+          git clone --depth 0 https://github.com/microsoft/vcpkg.git
+          cd vcpkg
+          git checkout 2025.07.25
+          cd ..
+          ./vcpkg/bootstrap-vcpkg.sh
           ./vcpkg/vcpkg install --triplet x86-windows
-          # Enable integration so that Visual Studio/MSBuild can find the
-          # installed packages automatically.
           ./vcpkg/vcpkg integrate install
-
-      - name: Clone mlpack source
-        run: |
-          # Clone the mlpack source at the specified tag.  A shallow clone
-          # reduces checkout time.
-          git clone --depth 1 --branch ${MLPACK_VERSION} https://github.com/mlpack/mlpack.git mlpack
 
       - name: Configure CMake
         run: |
